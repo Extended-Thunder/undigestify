@@ -1,0 +1,2 @@
+content	undigestify	chrome/content/
+overlay	chrome://messenger/content/messenger.xul	chrome://undigestify/content/undigestify.xul
