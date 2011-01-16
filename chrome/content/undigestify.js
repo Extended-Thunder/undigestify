@@ -71,33 +71,54 @@ UndigestifyKamensUs.CopyServiceListener.prototype = {
     },
 
     OnProgress: function (progress, progressMax) {
+	// dump("OnProgress");
     },
 
     OnStartCopy: function () {
+	// dump("OnStartCopy\n");
     },
 
-    OnStopCopy: function ( status ) {
+    OnStopCopy: function (status) {
+	// dump("OnStopCopy\n");
 	if (this._file.exists()) this._file.remove(true);
+	var msgWindow = Components.classes["@mozilla.org/messenger/msgwindow;1"]
+	    .createInstance();
+	msgWindow = msgWindow.QueryInterface(Components.interfaces
+					     .nsIMsgWindow);
+	this._closure._header.folder.updateFolder(msgWindow);
 	this._stop_notify(this._closure);
 	this._stop_notify = undefined;
 	this._closure = undefined;
     },
 
-    SetMessageKey: function (key ) {}
+    SetMessageKey: function (key) {}
 };
+
+// Constants and states
+UndigestifyKamensUs.PREAMBLE_SEPARATOR =
+    "----------------------------------------------------------------------";
+UndigestifyKamensUs.ENCLOSURE_SEPARATOR = "------------------------------";
+
+UndigestifyKamensUs.PREAMBLE_HEADER = 1;
+UndigestifyKamensUs.PREAMBLE_BODY = 2;
+UndigestifyKamensUs.PREAMBLE_BLANK = 3;
+UndigestifyKamensUs.ENCLOSURE_HEADER = 4;
+UndigestifyKamensUs.ENCLOSURE_BODY = 5;
+UndigestifyKamensUs.ENCLOSURE_BLANK = 6;
+UndigestifyKamensUs.TRAILER_STARS = 7;
+UndigestifyKamensUs.TRAILER_DONE = 8;
+UndigestifyKamensUs.ERROR = 9;
 
 UndigestifyKamensUs.UriStreamListener = function(messageHDR) {
     this._header = messageHDR;
     this._buffer = "";         // buffer of lines read in current section
     this._fragment = "";       // unprocessed text
-    this._preambled = false;   // past preamble
-    this._headered = false;    // past message or enclosure headers
+    this._state = UndigestifyKamensUs.PREAMBLE_HEADER;
     this._headers = "";        // message headers for merging into
                                // each enclosure
     this._subject = "";        // subject from message headers
     this._messages = 0;
     this._toCopy = Array();
-    this.copying = false;
 };
 
 UndigestifyKamensUs.UriStreamListener.prototype = {
@@ -105,10 +126,8 @@ UndigestifyKamensUs.UriStreamListener.prototype = {
 
     _copy_next: function(closure) {
 	if (closure._toCopy.length == 0) {
-	    closure.copying = false;
 	    return;
 	}
-	closure.copying = true;
 	var msgWindow = Components.classes["@mozilla.org/messenger/msgwindow;1"]
 	    .createInstance();
 	msgWindow = msgWindow.QueryInterface(Components.interfaces
@@ -119,14 +138,15 @@ UndigestifyKamensUs.UriStreamListener.prototype = {
 	    .createInstance(Components.interfaces.nsILocalFile);
 	sfile.initWithPath(filePath);
 	var folder = closure._header.folder;
+	var listener = new UndigestifyKamensUs
+	    .CopyServiceListener(sfile, closure._copy_next, closure);
 	var copyService = Components
 	    .classes["@mozilla.org/messenger/messagecopyservice;1"]
 	    .createInstance();
 	copyService = copyService.QueryInterface(Components.interfaces
 						 .nsIMsgCopyService);
 	if (UndigestifyKamensUs.IsPostbox()) {
-	    copyService.CopyFileMessage(sfile, folder, 0, "",
-					new UndigestifyKamensUs.CopyServiceListener(sFile, closure._copy_next, closure),
+	    copyService.CopyFileMessage(sfile, folder, 0, "", listener,
 					msgWindow);
 	}
 	else if (UndigestifyKamensUs.IsThunderbird2()) {
@@ -135,14 +155,13 @@ UndigestifyKamensUs.UriStreamListener.prototype = {
 	    fileSpc = fileSpc.QueryInterface(Components.interfaces.nsIFileSpec);
 	    fileSpc.nativePath = filePath;
 	    copyService.CopyFileMessage(fileSpc, folder, null, false, 0,
-					new UndigestifyKamensUs.CopyServiceListener(sFile, closure._copy_next, closure),
-					msgWindow);
+					listener, msgWindow);
 	}
 	else {
 	    copyService.CopyFileMessage(sfile, folder, null, false, 0, "",
-					new UndigestifyKamensUs.CopyServiceListener(sfile, closure._copy_next, closure),
-					msgWindow);
+					listener, msgWindow);
 	}
+	// closure._copy_next(closure);
     },
 
     _save_message: function() {
@@ -168,9 +187,14 @@ UndigestifyKamensUs.UriStreamListener.prototype = {
 	stream.write(this._buffer, this._buffer.length);
 	stream.close();
 	this._toCopy.push(sfile);
-	if (! this.copying) {
-	    this._copy_next(this);
+	// this._copy_next(this);
+    },
+
+    _error: function(stream, message) {
+	if (stream != undefined) {
+	    stream.close();
 	}
+	alert("Undigestify: " + message);
     },
 
     _merge_headers: function() {
@@ -200,6 +224,12 @@ UndigestifyKamensUs.UriStreamListener.prototype = {
 	enclosure = this._strip_header(enclosure, "references");
 	main = "References: " + main_references + " "
 	    + enclosure_references + " " + main_message_id + "\n" + main;
+	var uuidGenerator = 
+	    Components.classes["@mozilla.org/uuid-generator;1"]
+	    .getService(Components.interfaces.nsIUUIDGenerator);
+	var uuid = uuidGenerator.generateUUID().toString();
+	main = "Message-ID: " + main_message_id.replace(/@/, "." + uuid + "@")
+	    + "\n" + main;
 
 	var main_subject = this._subject;
 	if (main_subject.length) {
@@ -258,8 +288,32 @@ UndigestifyKamensUs.UriStreamListener.prototype = {
     onStartRequest: function(aReq, aContext) {},
 
     onStopRequest: function(aReq, aContext, aStatusCode) {
-	if (this._preambled && this._headered) {
+	switch (this._state) {
+	case UndigestifyKamensUs.ERROR:
+	    break;
+	case UndigestifyKamensUs.PREAMBLE_HEADER:
+	    this._error(undefined, "Message has no body");
+	    break;
+	case UndigestifyKamensUs.PREAMBLE_BODY:
+	    this._error(undefined, "No preamble separator");
+	    break;
+	case UndigestifyKamensUs.PREAMBLE_BLANK:
+	    this._error(undefined, "No enclosures");
+	    break;
+	case UndigestifyKamensUs.ENCLOSURE_HEADER:
+	    if (this._buffer == "") {
+		if (this._toCopy.length == 1) {
+		    this._error(undefined, "No enclosures");
+		}
+		break;
+	    }
+	case UndigestifyKamensUs.ENCLOSURE_BODY:
+	case UndigestifyKamensUs.ENCLOSURE_BLANK:
+	case UndigestifyKamensUs.TRAILER_STARS:
+	case UndigestifyKamensUs.TRAILER_DONE:
 	    this._save_message();
+	    this._copy_next(this);
+	    break;
 	}
     },
 
@@ -283,70 +337,93 @@ UndigestifyKamensUs.UriStreamListener.prototype = {
 	    }
 	    var line = data.slice(0, eol+1);
 	    data = data.slice(eol+1);
-	    if (! this._preambled) {
-		if (! this._headered) {
-		    // still in message header
-		    this._buffer += line;
-		    if (line == "\n") {
-			this._headers = this._strip_header(this._buffer,
-							   "received");
-			this._subject = this._get_header(this._headers,
-							 "subject");
-			this._headered = true;
-		    }
-		}
-		else if (line == "----------------------------------------------------------------------\n") {
-		    // separator line, but only if followed by a blank line
-		    if (! data.length) {
-			this._fragment = line;
-		    }
-		    else if (data.slice(0, 1) == "\n") {
-			// header separator has been found
-			data = data.slice(1, data.length);
-			this._save_message();
-			this._buffer = "";
-			this._preambled = true;
-			this._headered = false;
-		    }
-		    else {
-			this._buffer += line;
-		    }
-		}
-		else {
-		    this._buffer += line;
-		}
-	    }
-	    else if (! this._headered) {
-		// in header of an enclosure
-		if (! this._buffer.length && line.match(/^End of /)) {
-		    // all done!
-		    aInputStream.close();
-		    return;
-		}
+	    switch (this._state) {
+	    case UndigestifyKamensUs.PREAMBLE_HEADER:
 		this._buffer += line;
 		if (line == "\n") {
-		    this._merge_headers();
-		    this._headered = true;
+		    this._headers = this._strip_header(this._buffer,
+						       "received");
+		    this._subject = this._get_header(this._headers,
+						     "subject");
+		    this._state = UndigestifyKamensUs.PREAMBLE_BODY;
 		}
-	    }
-	    else if (line == "------------------------------\n") {
-		// separator line, but only if followed by a blank line
-		if (! data.length) {
-		    this._fragment = line;
-		}
-		else if (data.slice(0, 1) == "\n") {
-		    // enclosure separator has been found
-		    data = data.slice(1, data.length);
-		    this._save_message();
-		    this._buffer = "";
-		    this._headered = false;
+		break;
+	    case UndigestifyKamensUs.PREAMBLE_BODY:
+		if (line.replace(/\s*$/, "") ==
+		    UndigestifyKamensUs.PREAMBLE_SEPARATOR) {
+		    this._state = UndigestifyKamensUs.PREAMBLE_BLANK;
 		}
 		else {
 		    this._buffer += line;
 		}
-	    }
-	    else {
-		this._buffer += line;
+		break;
+	    case UndigestifyKamensUs.PREAMBLE_BLANK:
+		if (line.replace(/^\s*$/, "") == "") {
+		    this._save_message();
+		    this._buffer = "";
+		    this._state = UndigestifyKamensUs.ENCLOSURE_HEADER;
+		}
+		else {
+		    this._buffer += UndigestifyKamensUs.PREAMBLE_SEPARATOR + "\n" +
+			line;
+		    this._state = UndigestifyKamensUs.PREAMBLE_BODY;
+		}
+		break;
+	    case UndigestifyKamensUs.ENCLOSURE_HEADER:
+		if (line.match(/^\s*$/)) {
+		    if (this._buffer == "") {
+			this._error(aInputStream, "Missing enclosure header");
+		    }
+		    this._buffer += line;
+		    this._merge_headers();
+		    this._state = UndigestifyKamensUs.ENCLOSURE_BODY;
+		}
+		else if (line.match(/^End of /) && this._buffer == "") {
+		    this._state = UndigestifyKamensUs.TRAILER_STARS;
+		}
+		else if (! line.match(/^[^\s:]+:/) &&
+			 ! (line.buffer != "" && line.match(/^[ \t]/))) {
+		    this._error(aInputStream, "Malformed enclosure header");
+		}
+		else {
+		    this._buffer += line;
+		}
+		break;
+	    case UndigestifyKamensUs.ENCLOSURE_BODY:
+		if (line.replace(/\s*$/, "") ==
+		    UndigestifyKamensUs.ENCLOSURE_SEPARATOR) {
+		    this._state = UndigestifyKamensUs.ENCLOSURE_BLANK;
+		}
+		else {
+		    this._buffer += line;
+		}
+		break;
+	    case UndigestifyKamensUs.ENCLOSURE_BLANK:
+		if (line.replace(/^\s*$/, "") == "") {
+		    this._save_message();
+		    this._buffer = "";
+		    this._state = UndigestifyKamensUs.ENCLOSURE_HEADER;
+		}
+		else {
+		    this._buffer += UndigestifyKamensUs.ENCLOSURE_SEPARATOR 
+			+ "\n" + line;
+		    this._state = UndigestifyKamensUs.ENCLOSURE_BODY;
+		}
+		break;
+	    case UndigestifyKamensUs.TRAILER_STARS:
+		if (! line.match(/^\*+\s*$/)) {
+		    this._error(aInputStream, "Malformed trailer");
+		}
+		else {
+		    this._state = UndigestifyKamensUs.TRAILER_DONE;
+		}
+		break;
+	    case UndigestifyKamensUs.TRAILER_DONE:
+		if (! line.match(/^\s*$/)) {
+		    this._error(aInputStream,
+				"Unexpected content after trailer");
+		}
+		break;
 	    }
 	}
 	if (data) {
