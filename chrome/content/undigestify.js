@@ -63,13 +63,11 @@ UndigestifyKamensUs.IsPostbox = function() {
 // if you trigger the next copy in OnStopCopy, it takes much longer
 // than necessary.
 UndigestifyKamensUs.newMailListener = function(streamListener) {
-    // XXX we want to react to the specific message we added not to
-    // any added message
     this._streamListener = streamListener;
 }
 
 UndigestifyKamensUs.newMailListener.prototype = {
-    // Thunderbird 2 (and Postbox?)
+    // Thunderbird 2 and Postbox
     itemAdded: function(item) {
 	var aMsgHdr = item.QueryInterface(Components.interfaces.nsIMsgDBHdr);
 	this.msgAdded(aMsgHdr);
@@ -77,15 +75,26 @@ UndigestifyKamensUs.newMailListener.prototype = {
 
     // Thunderbird 3
     msgAdded: function(aMsgHdr) {
-	this._streamListener._copy_next(this._streamListener);
-	// XXX need to remove listener when done with all of them
+	if (this._streamListener._toCopyIds.length) {
+	    var id = this._streamListener._toCopyIds[0];
+	    if ((id && id.indexOf(aMsgHdr.messageId)) || !id) {
+		this._streamListener._copy_next(this._streamListener);
+		this._streamListener._toCopyIds.shift();
+	    }
+	}
+	else {
+	    var notificationService = Components
+		.classes["@mozilla.org/messenger/msgnotificationservice;1"]
+		.getService(Components.interfaces
+			    .nsIMsgFolderNotificationService);
+	    notificationService.removeListener(this);
+	    this._streamListener = undefined;
+	}
     }
 };	
 
-UndigestifyKamensUs.CopyServiceListener = function(file, stop_notify, closure) {
+UndigestifyKamensUs.CopyServiceListener = function(file) {
     this._file = file;
-    this._stop_notify = stop_notify;
-    this._closure = closure;
 }
 
 UndigestifyKamensUs.CopyServiceListener.prototype = {
@@ -108,14 +117,6 @@ UndigestifyKamensUs.CopyServiceListener.prototype = {
     OnStopCopy: function (status) {
 	// dump("OnStopCopy\n");
 	if (this._file.exists()) this._file.remove(true);
-	// var msgWindow = Components.classes["@mozilla.org/messenger/msgwindow;1"]
-	//     .createInstance();
-	// msgWindow = msgWindow.QueryInterface(Components.interfaces
-	// 				     .nsIMsgWindow);
-	// this._closure._header.folder.updateFolder(msgWindow);
-	// this._stop_notify(this._closure);
-	// this._stop_notify = undefined;
-	// this._closure = undefined;
     },
 
     SetMessageKey: function (key) {}
@@ -146,16 +147,17 @@ UndigestifyKamensUs.UriStreamListener = function(messageHDR) {
     this._subject = "";        // subject from message headers
     this._messages = 0;
     this._toCopy = Array();
-    this._newMailListener = new UndigestifyKamensUs.newMailListener(this);
+    this._toCopyIds = Array();
+    var newMailListener = new UndigestifyKamensUs.newMailListener(this);
     var notificationService = Components
 	.classes["@mozilla.org/messenger/msgnotificationservice;1"]
 	.getService(Components.interfaces.nsIMsgFolderNotificationService);
     if (UndigestifyKamensUs.IsThunderbird2() ||
-	UndigestifyKamensUs.IsPostbox()) { // have not confirmed for Postbox
-	notificationService.addListener(this._newMailListener);
+	UndigestifyKamensUs.IsPostbox()) {
+	notificationService.addListener(newMailListener);
     }
     else {
-	notificationService.addListener(this._newMailListener,
+	notificationService.addListener(newMailListener,
 					notificationService.msgAdded);
     }
 };
@@ -178,7 +180,7 @@ UndigestifyKamensUs.UriStreamListener.prototype = {
 	sfile.initWithPath(filePath);
 	var folder = closure._header.folder;
 	var listener = new UndigestifyKamensUs
-	    .CopyServiceListener(sfile, closure._copy_next, closure);
+	    .CopyServiceListener(sfile);
 	var copyService = Components
 	    .classes["@mozilla.org/messenger/messagecopyservice;1"]
 	    .createInstance();
@@ -222,11 +224,12 @@ UndigestifyKamensUs.UriStreamListener.prototype = {
 	    .classes['@mozilla.org/network/file-output-stream;1']
 	    .createInstance(Components.interfaces.nsIFileOutputStream);
 	stream.init(sfile, 2, 0x200, false);
+	var id = this._get_header(this._buffer, "message-id");
 	this._buffer = this._buffer.replace(/\n/g, "\r\n");
 	stream.write(this._buffer, this._buffer.length);
 	stream.close();
 	this._toCopy.push(sfile);
-	// this._copy_next(this);
+	this._toCopyIds.push(id);
     },
 
     _error: function(stream, message) {
@@ -254,7 +257,7 @@ UndigestifyKamensUs.UriStreamListener.prototype = {
 	    main = this._strip_header(main, "message-id");
 	}
 	else {
-	    main = this_strip_header(main, "resent-message-id");
+	    main = this._strip_header(main, "resent-message-id");
 	}
 	var main_references = this._get_header(main, "references");
 	main = this._strip_header(main, "references");
