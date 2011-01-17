@@ -55,6 +55,33 @@ UndigestifyKamensUs.IsPostbox = function() {
     return(appInfo.name == "Postbox");
 };
 
+// Use a new mail listener to wait until one message is finished
+// copying before copying the next one. Necessary because of two bugs
+// in Thunderbird, at least 3.1.7: (1) if you do all the copies at
+// once, some of them disappear into the ether without succeeding; (2)
+// OnStopCopy often takes much longer to be called then it should, so
+// if you trigger the next copy in OnStopCopy, it takes much longer
+// than necessary.
+UndigestifyKamensUs.newMailListener = function(streamListener) {
+    // XXX we want to react to the specific message we added not to
+    // any added message
+    this._streamListener = streamListener;
+}
+
+UndigestifyKamensUs.newMailListener.prototype = {
+    // Thunderbird 2 (and Postbox?)
+    itemAdded: function(item) {
+	var aMsgHdr = item.QueryInterface(Components.interfaces.nsIMsgDBHdr);
+	this.msgAdded(aMsgHdr);
+    },
+
+    // Thunderbird 3
+    msgAdded: function(aMsgHdr) {
+	this._streamListener._copy_next(this._streamListener);
+	// XXX need to remove listener when done with all of them
+    }
+};	
+
 UndigestifyKamensUs.CopyServiceListener = function(file, stop_notify, closure) {
     this._file = file;
     this._stop_notify = stop_notify;
@@ -81,14 +108,14 @@ UndigestifyKamensUs.CopyServiceListener.prototype = {
     OnStopCopy: function (status) {
 	// dump("OnStopCopy\n");
 	if (this._file.exists()) this._file.remove(true);
-	var msgWindow = Components.classes["@mozilla.org/messenger/msgwindow;1"]
-	    .createInstance();
-	msgWindow = msgWindow.QueryInterface(Components.interfaces
-					     .nsIMsgWindow);
-	this._closure._header.folder.updateFolder(msgWindow);
-	this._stop_notify(this._closure);
-	this._stop_notify = undefined;
-	this._closure = undefined;
+	// var msgWindow = Components.classes["@mozilla.org/messenger/msgwindow;1"]
+	//     .createInstance();
+	// msgWindow = msgWindow.QueryInterface(Components.interfaces
+	// 				     .nsIMsgWindow);
+	// this._closure._header.folder.updateFolder(msgWindow);
+	// this._stop_notify(this._closure);
+	// this._stop_notify = undefined;
+	// this._closure = undefined;
     },
 
     SetMessageKey: function (key) {}
@@ -119,6 +146,18 @@ UndigestifyKamensUs.UriStreamListener = function(messageHDR) {
     this._subject = "";        // subject from message headers
     this._messages = 0;
     this._toCopy = Array();
+    this._newMailListener = new UndigestifyKamensUs.newMailListener(this);
+    var notificationService = Components
+	.classes["@mozilla.org/messenger/msgnotificationservice;1"]
+	.getService(Components.interfaces.nsIMsgFolderNotificationService);
+    if (UndigestifyKamensUs.IsThunderbird2() ||
+	UndigestifyKamensUs.IsPostbox()) { // have not confirmed for Postbox
+	notificationService.addListener(this._newMailListener);
+    }
+    else {
+	notificationService.addListener(this._newMailListener,
+					notificationService.msgAdded);
+    }
 };
 
 UndigestifyKamensUs.UriStreamListener.prototype = {
