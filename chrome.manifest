@@ -1,2 +1,4 @@
 content	undigestify	chrome/content/
-overlay	chrome://messenger/content/messenger.xul	chrome://undigestify/content/undigestify.xul
+overlay	chrome://messenger/content/messenger.xul	chrome://undigestify/content/undigestify.xul application={3550f703-e582-4d05-9a08-453d09bdfdc6} appversion>=3.0
+overlay	chrome://messenger/content/messenger.xul	chrome://undigestify/content/undigestifyTB2.xul application={3550f703-e582-4d05-9a08-453d09bdfdc6} appversion<3.0
+overlay	chrome://messenger/content/messenger.xul	chrome://undigestify/content/undigestifyPostbox.xul application=postbox@postbox-inc.com

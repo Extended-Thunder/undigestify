@@ -77,7 +77,8 @@ UndigestifyKamensUs.newMailListener.prototype = {
     msgAdded: function(aMsgHdr) {
 	if (this._streamListener._toCopyIds.length) {
 	    var id = this._streamListener._toCopyIds[0];
-	    if ((id && id.indexOf(aMsgHdr.messageId)) || !id) {
+	    if ((id && id.indexOf(aMsgHdr.messageId)) ||
+		!id) {
 		this._streamListener._copy_next(this._streamListener);
 		this._streamListener._toCopyIds.shift();
 	    }
@@ -353,7 +354,9 @@ UndigestifyKamensUs.UriStreamListener.prototype = {
 	case UndigestifyKamensUs.ENCLOSURE_BLANK:
 	case UndigestifyKamensUs.TRAILER_STARS:
 	case UndigestifyKamensUs.TRAILER_DONE:
-	    this._save_message();
+	    if (this._buffer != "") {
+		this._save_message();
+	    }
 	    this._copy_next(this);
 	    break;
 	}

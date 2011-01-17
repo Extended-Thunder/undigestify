@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+<overlay id="undigestify-overlay"
+	 xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
+
+  <script src="undigestify.js"/>
+
+  <menupopup id="messageMenuPopup">
+    <menuitem id="KamensUs:menu_undigestify" label="Undigestify"
+	     oncommand="UndigestifyKamensUs.Undigestify();"/>
+  </menupopup>
+
+  <!-- insertafter isn't working, can't figure out why, it really should be -->
+  <menupopup id="threadPaneContext">
+    <menuitem id="KamensUs:menu_popup_undigestify" label="Undigestify"
+	     oncommand="UndigestifyKamensUs.Undigestify();"
+	     insertafter="downloadSelected,threadPaneContext-delete"/>
+  </menupopup>
+
+</overlay>
