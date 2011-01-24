@@ -1,24 +1,54 @@
 var UndigestifyKamensUs = function() {}
 
+// Constants and states
+UndigestifyKamensUs.PREAMBLE_SEPARATOR =
+    "----------------------------------------------------------------------";
+UndigestifyKamensUs.ENCLOSURE_SEPARATOR = "------------------------------";
+
+UndigestifyKamensUs.PREAMBLE_HEADER = 1;
+UndigestifyKamensUs.PREAMBLE_BODY = 2;
+UndigestifyKamensUs.PREAMBLE_BLANK = 3;
+UndigestifyKamensUs.ENCLOSURE_HEADER = 4;
+UndigestifyKamensUs.ENCLOSURE_BODY = 5;
+UndigestifyKamensUs.ENCLOSURE_BLANK = 6;
+UndigestifyKamensUs.TRAILER_STARS = 7;
+UndigestifyKamensUs.TRAILER_DONE = 8;
+UndigestifyKamensUs.ERROR = 9;
+
+UndigestifyKamensUs.boolAttribute = function(node, attribute, value) {
+    if (value) {
+	node.setAttribute(attribute, "true");
+    }
+    else {
+	node.removeAttribute(attribute);
+    }
+}
+
 UndigestifyKamensUs.UpdateMenuItems = function(e) {
-    var hidden = !gDBView || gDBView.numSelected == 0;
+    var disabled = !gDBView || gDBView.numSelected == 0;
+    var pop = document.popupNode;
+    var hidden;
+    if (pop) {
+	hidden = true;
+	while (pop) {
+	    if (pop.id == "threadTree") {
+		hidden = false;
+		break;
+	    }
+	    pop = pop.parentNode;
+	}
+    }
+    else {
+	hidden = false;
+    }
     var menu1 = document.getElementById("KamensUs:menu_undigestify");
     if (menu1) {
-	if (hidden) {
-	    menu1.setAttribute("disabled", "true");
-	}
-	else {
-	    menu1.removeAttribute("disabled");
-	}
+	UndigestifyKamensUs.boolAttribute(menu1, "disabled", disabled);
     }
     var menu2 = document.getElementById("KamensUs:menu_popup_undigestify");
     if (menu2) {
-	if (hidden) {
-	    menu2.setAttribute("disabled", "true");
-	}
-	else {
-	    menu2.removeAttribute("disabled");
-	}
+	UndigestifyKamensUs.boolAttribute(menu2, "disabled", disabled);
+	UndigestifyKamensUs.boolAttribute(menu2, "hidden", hidden);
     }
 }
 
@@ -55,45 +85,6 @@ UndigestifyKamensUs.IsPostbox = function() {
     return(appInfo.name == "Postbox");
 };
 
-// Use a new mail listener to wait until one message is finished
-// copying before copying the next one. Necessary because of two bugs
-// in Thunderbird, at least 3.1.7: (1) if you do all the copies at
-// once, some of them disappear into the ether without succeeding; (2)
-// OnStopCopy often takes much longer to be called then it should, so
-// if you trigger the next copy in OnStopCopy, it takes much longer
-// than necessary.
-UndigestifyKamensUs.newMailListener = function(streamListener) {
-    this._streamListener = streamListener;
-}
-
-UndigestifyKamensUs.newMailListener.prototype = {
-    // Thunderbird 2 and Postbox
-    itemAdded: function(item) {
-	var aMsgHdr = item.QueryInterface(Components.interfaces.nsIMsgDBHdr);
-	this.msgAdded(aMsgHdr);
-    },
-
-    // Thunderbird 3
-    msgAdded: function(aMsgHdr) {
-	if (this._streamListener._toCopyIds.length) {
-	    var id = this._streamListener._toCopyIds[0];
-	    if ((id && id.indexOf(aMsgHdr.messageId)) ||
-		!id) {
-		this._streamListener._copy_next(this._streamListener);
-		this._streamListener._toCopyIds.shift();
-	    }
-	}
-	else {
-	    var notificationService = Components
-		.classes["@mozilla.org/messenger/msgnotificationservice;1"]
-		.getService(Components.interfaces
-			    .nsIMsgFolderNotificationService);
-	    notificationService.removeListener(this);
-	    this._streamListener = undefined;
-	}
-    }
-};	
-
 UndigestifyKamensUs.CopyServiceListener = function(file) {
     this._file = file;
 }
@@ -117,26 +108,14 @@ UndigestifyKamensUs.CopyServiceListener.prototype = {
 
     OnStopCopy: function (status) {
 	// dump("OnStopCopy\n");
+	if (! Components.isSuccessCode(status)) {
+	    alert("Undigestify: Error copying undigestified message into folder. Message may not have been fully undigestified.");
+	}
 	if (this._file.exists()) this._file.remove(true);
     },
 
     SetMessageKey: function (key) {}
 };
-
-// Constants and states
-UndigestifyKamensUs.PREAMBLE_SEPARATOR =
-    "----------------------------------------------------------------------";
-UndigestifyKamensUs.ENCLOSURE_SEPARATOR = "------------------------------";
-
-UndigestifyKamensUs.PREAMBLE_HEADER = 1;
-UndigestifyKamensUs.PREAMBLE_BODY = 2;
-UndigestifyKamensUs.PREAMBLE_BLANK = 3;
-UndigestifyKamensUs.ENCLOSURE_HEADER = 4;
-UndigestifyKamensUs.ENCLOSURE_BODY = 5;
-UndigestifyKamensUs.ENCLOSURE_BLANK = 6;
-UndigestifyKamensUs.TRAILER_STARS = 7;
-UndigestifyKamensUs.TRAILER_DONE = 8;
-UndigestifyKamensUs.ERROR = 9;
 
 UndigestifyKamensUs.UriStreamListener = function(messageHDR) {
     this._header = messageHDR;
@@ -146,65 +125,13 @@ UndigestifyKamensUs.UriStreamListener = function(messageHDR) {
     this._headers = "";        // message headers for merging into
                                // each enclosure
     this._subject = "";        // subject from message headers
+    this._id = "";
     this._messages = 0;
     this._toCopy = Array();
-    this._toCopyIds = Array();
-    var newMailListener = new UndigestifyKamensUs.newMailListener(this);
-    var notificationService = Components
-	.classes["@mozilla.org/messenger/msgnotificationservice;1"]
-	.getService(Components.interfaces.nsIMsgFolderNotificationService);
-    if (UndigestifyKamensUs.IsThunderbird2() ||
-	UndigestifyKamensUs.IsPostbox()) {
-	notificationService.addListener(newMailListener);
-    }
-    else {
-	notificationService.addListener(newMailListener,
-					notificationService.msgAdded);
-    }
 };
 
 UndigestifyKamensUs.UriStreamListener.prototype = {
     // Utility functions
-
-    _copy_next: function(closure) {
-	if (closure._toCopy.length == 0) {
-	    return;
-	}
-	var msgWindow = Components.classes["@mozilla.org/messenger/msgwindow;1"]
-	    .createInstance();
-	msgWindow = msgWindow.QueryInterface(Components.interfaces
-					     .nsIMsgWindow);
-	var filePath = closure._toCopy.shift().path;
-
-	var sfile = Components.classes["@mozilla.org/file/local;1"]
-	    .createInstance(Components.interfaces.nsILocalFile);
-	sfile.initWithPath(filePath);
-	var folder = closure._header.folder;
-	var listener = new UndigestifyKamensUs
-	    .CopyServiceListener(sfile);
-	var copyService = Components
-	    .classes["@mozilla.org/messenger/messagecopyservice;1"]
-	    .createInstance();
-	copyService = copyService.QueryInterface(Components.interfaces
-						 .nsIMsgCopyService);
-	if (UndigestifyKamensUs.IsPostbox()) {
-	    copyService.CopyFileMessage(sfile, folder, 0, "", listener,
-					msgWindow);
-	}
-	else if (UndigestifyKamensUs.IsThunderbird2()) {
-	    var fileSpc = Components.classes["@mozilla.org/filespec;1"]
-		.createInstance();
-	    fileSpc = fileSpc.QueryInterface(Components.interfaces.nsIFileSpec);
-	    fileSpc.nativePath = filePath;
-	    copyService.CopyFileMessage(fileSpc, folder, null, false, 0,
-					listener, msgWindow);
-	}
-	else {
-	    copyService.CopyFileMessage(sfile, folder, null, false, 0, "",
-					listener, msgWindow);
-	}
-	// closure._copy_next(closure);
-    },
 
     _save_message: function() {
 	// save message from buffer into folder.
@@ -215,29 +142,49 @@ UndigestifyKamensUs.UriStreamListener.prototype = {
 	var sfile = Components.classes["@mozilla.org/file/local;1"]
 	    .createInstance(Components.interfaces.nsILocalFile);
 	sfile.initWithPath(tempDir.path);
-	this._messages++;
-	sfile.appendRelativePath("tempMsg" + this._header.messageId + "." +
-				 this._messages + ".eml");
-	var filePath = sfile.path;
+	var uuidGenerator = 
+	    Components.classes["@mozilla.org/uuid-generator;1"]
+	    .getService(Components.interfaces.nsIUUIDGenerator);
+	var uuid = uuidGenerator.generateUUID().toString();
+	sfile.appendRelativePath("tempMsg" + uuid + ".eml");
 	if (sfile.exists()) sfile.remove(true);
 	sfile.create(sfile.NORMAL_FILE_TYPE, 0600);
 	var stream = Components
 	    .classes['@mozilla.org/network/file-output-stream;1']
 	    .createInstance(Components.interfaces.nsIFileOutputStream);
 	stream.init(sfile, 2, 0x200, false);
-	var id = this._get_header(this._buffer, "message-id");
 	this._buffer = this._buffer.replace(/\n/g, "\r\n");
 	stream.write(this._buffer, this._buffer.length);
 	stream.close();
 	this._toCopy.push(sfile);
-	this._toCopyIds.push(id);
     },
 
     _error: function(stream, message) {
 	if (stream != undefined) {
 	    stream.close();
 	}
+	this._state = UndigestifyKamensUs.ERROR;
 	alert("Undigestify: " + message);
+    },
+
+    // id argument only used the first time the function is called
+    _make_id: function(id) {
+	var uuidGenerator = 
+	    Components.classes["@mozilla.org/uuid-generator;1"]
+	    .getService(Components.interfaces.nsIUUIDGenerator);
+	var uuid = uuidGenerator.generateUUID().toString();
+	if (! this._id) {
+	    if (! id) {
+		id = "<" + uuid + "@undigestify.kamens.us>";
+	    }
+	    id = id.replace(/@/, "." + uuid + "." + this._messages + "@");
+	    this._id = id;
+	}
+	else {
+	    id = this._id.replace(/\d+@/, this._messages + "@");
+	}
+	this._messages++;
+	return id;
     },
 
     _merge_headers: function() {
@@ -252,27 +199,16 @@ UndigestifyKamensUs.UriStreamListener.prototype = {
 	var main = this._headers;
 	var enclosure = this._buffer;
 
-	var main_message_id = this._get_header(main, "resent-message-id");
-	if (! main_message_id.length) {
-	    main_message_id = this._get_header(main, "message-id");
-	    main = this._strip_header(main, "message-id");
-	}
-	else {
-	    main = this._strip_header(main, "resent-message-id");
-	}
+	var main_message_id = this._id;
 	var main_references = this._get_header(main, "references");
 	main = this._strip_header(main, "references");
+	main = this._strip_header(main, "message-id");
 	var enclosure_references = this._get_header(enclosure,
 						    "references");
 	enclosure = this._strip_header(enclosure, "references");
 	main = "References: " + main_references + " "
 	    + enclosure_references + " " + main_message_id + "\n" + main;
-	var uuidGenerator = 
-	    Components.classes["@mozilla.org/uuid-generator;1"]
-	    .getService(Components.interfaces.nsIUUIDGenerator);
-	var uuid = uuidGenerator.generateUUID().toString();
-	main = "Message-ID: " + main_message_id.replace(/@/, "." + uuid + "@")
-	    + "\n" + main;
+	main = "Message-ID: " + this._make_id() + "\n" + main;
 
 	var main_subject = this._subject;
 	if (main_subject.length) {
@@ -311,7 +247,7 @@ UndigestifyKamensUs.UriStreamListener.prototype = {
 	var matches = headers.match(re);
 	if (matches && matches.length) {
 	    return(matches[0].replace(/^[^:]+:\s*/, "")
-		   .replace(/\n\s+/g, " "));
+		   .replace(/\n\s+/g, " ")).replace(/\s+$/, "");
 	}
 	else {
 	    return "";
@@ -357,7 +293,41 @@ UndigestifyKamensUs.UriStreamListener.prototype = {
 	    if (this._buffer != "") {
 		this._save_message();
 	    }
-	    this._copy_next(this);
+	    var i;
+	    for (i in this._toCopy) {
+		var file = this._toCopy[i];
+		var listener = new UndigestifyKamensUs
+		    .CopyServiceListener(file.path);
+		var copyService = Components
+		    .classes["@mozilla.org/messenger/messagecopyservice;1"]
+		    .getService(Components.interfaces.nsIMsgCopyService);
+		var folder = this._header.folder;
+		var msgWindow = Components
+		    .classes["@mozilla.org/messenger/msgwindow;1"]
+		    .createInstance();
+		if (UndigestifyKamensUs.IsPostbox()) {
+		    var sfile = Components.classes["@mozilla.org/file/local;1"]
+			.createInstance(Components.interfaces.nsILocalFile);
+		    sfile.initWithPath(file.path);
+		    copyService.CopyFileMessage(sfile, folder, 0, "", listener,
+						msgWindow);
+		}
+		else if (UndigestifyKamensUs.IsThunderbird2()) {
+		    var fileSpc = Components.classes["@mozilla.org/filespec;1"]
+			.createInstance()
+			.QueryInterface(Components.interfaces.nsIFileSpec);
+		    fileSpc.nativePath = file.path;
+		    copyService.CopyFileMessage(fileSpc, folder, null, false,
+						0, listener, msgWindow);
+		}
+		else {
+		    var sfile = Components.classes["@mozilla.org/file/local;1"]
+			.createInstance(Components.interfaces.nsILocalFile);
+		    sfile.initWithPath(file.path);
+		    copyService.CopyFileMessage(sfile, folder, null, false, 0,
+						"", listener, msgWindow);
+		}
+	    }
 	    break;
 	}
     },
@@ -386,10 +356,30 @@ UndigestifyKamensUs.UriStreamListener.prototype = {
 	    case UndigestifyKamensUs.PREAMBLE_HEADER:
 		this._buffer += line;
 		if (line == "\n") {
-		    this._headers = this._strip_header(this._buffer,
-						       "received");
-		    this._subject = this._get_header(this._headers,
+		    var id = this._get_header(this._buffer, 
+					      "resent-message-id");
+		    if (id) {
+			this._buffer =
+			    this._strip_header(this._buffer,
+					       "resent-message-id");
+		    }
+		    else {
+			id = this._get_header(this._buffer, "message-id");
+			this._buffer =
+			    this._strip_header(this._buffer, "message-id");
+		    }
+		    this._id = this._make_id(id);
+		    var refs = this._get_header(this._buffer, "references");
+		    this._buffer = this._strip_header(this._buffer,
+						      "references");
+		    this._buffer = this._strip_header(this._buffer,
+						      "received");
+		    this._buffer = "Message-ID: " + this._id + "\n" +
+			"References: " + refs + " " + id + "\n" +
+			this._buffer;
+		    this._subject = this._get_header(this._buffer,
 						     "subject");
+		    this._headers = this._buffer;
 		    this._state = UndigestifyKamensUs.PREAMBLE_BODY;
 		}
 		break;
