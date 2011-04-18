@@ -1,9 +1,14 @@
 var UndigestifyKamensUs = function() {}
 
 // Constants and states
+UndigestifyKamensUs.FORMAT_UNKNOWN = 0;
+UndigestifyKamensUs.FORMAT_RFC1153 = 1;
+UndigestifyKamensUs.FORMAT_LISTSTAR = 2;
+
 UndigestifyKamensUs.PREAMBLE_SEPARATOR =
     "----------------------------------------------------------------------";
-UndigestifyKamensUs.ENCLOSURE_SEPARATOR = "------------------------------";
+UndigestifyKamensUs.ENCLOSURE_SEPARATOR_RFC1153 = "------------------------------";
+UndigestifyKamensUs.ENCLOSURE_SEPARATOR_LISTSTAR = "----------------------------------------------------------------------";
 
 UndigestifyKamensUs.PREAMBLE_HEADER = 1;
 UndigestifyKamensUs.PREAMBLE_BODY = 2;
@@ -121,13 +126,14 @@ UndigestifyKamensUs.UriStreamListener = function(messageHDR) {
     this._header = messageHDR;
     this._buffer = "";         // buffer of lines read in current section
     this._fragment = "";       // unprocessed text
+    this._format = UndigestifyKamensUs.FORMAT_UNKNOWN;
     this._state = UndigestifyKamensUs.PREAMBLE_HEADER;
     this._headers = "";        // message headers for merging into
                                // each enclosure
     this._subject = "";        // subject from message headers
     this._id = "";
     this._messages = 0;
-    this._toCopy = Array();
+    this._toCopy = new Array();
 };
 
 UndigestifyKamensUs.UriStreamListener.prototype = {
@@ -425,8 +431,18 @@ UndigestifyKamensUs.UriStreamListener.prototype = {
 		}
 		break;
 	    case UndigestifyKamensUs.ENCLOSURE_BODY:
-		if (line.replace(/\s*$/, "") ==
-		    UndigestifyKamensUs.ENCLOSURE_SEPARATOR) {
+		if ((this._format == UndigestifyKamensUs.FORMAT_UNKNOWN ||
+		     this._format == UndigestifyKamensUs.FORMAT_RFC1153) &&
+		    (line.replace(/\s*$/, "") ==
+		     UndigestifyKamensUs.ENCLOSURE_SEPARATOR_RFC1153)) {
+		    this._format = UndigestifyKamensUs.FORMAT_RFC1153;
+		    this._state = UndigestifyKamensUs.ENCLOSURE_BLANK;
+		}
+		else if ((this._format == UndigestifyKamensUs.FORMAT_UNKNOWN ||
+			  this._format == UndigestifyKamensUs.FORMAT_LISTSTAR) &&
+			 (line.replace(/\s*$/, "") ==
+			  UndigestifyKamensUs.ENCLOSURE_SEPARATOR_LISTSTAR)) {
+		    this._format = UndigestifyKamensUs.FORMAT_LISTSTAR;
 		    this._state = UndigestifyKamensUs.ENCLOSURE_BLANK;
 		}
 		else {
@@ -440,9 +456,19 @@ UndigestifyKamensUs.UriStreamListener.prototype = {
 		    this._state = UndigestifyKamensUs.ENCLOSURE_HEADER;
 		}
 		else {
-		    this._buffer += UndigestifyKamensUs.ENCLOSURE_SEPARATOR 
-			+ "\n" + line;
+		    var sep;
+		    if (this._format == UndigestifyKamensUs.FORMAT_RFC1153) {
+			sep = UndigestifyKamensUs.ENCLOSURE_SEPARATOR_RFC1153;
+		    }
+		    else {
+			sep = UndigestifyKamensUs.ENCLOSURE_SEPARATOR_LISTSTAR;
+		    }
+		    this._buffer += sep + "\n" + line;
 		    this._state = UndigestifyKamensUs.ENCLOSURE_BODY;
+		    if (this._toCopy.length == 0) {
+			// Format guess might have been wrong
+			this._format = UndigestifyKamensUs.FORMAT_UNKONWN;
+		    }
 		}
 		break;
 	    case UndigestifyKamensUs.TRAILER_STARS:
