@@ -16,9 +16,12 @@ UndigestifyKamensUs.PREAMBLE_BLANK = 3;
 UndigestifyKamensUs.ENCLOSURE_HEADER = 4;
 UndigestifyKamensUs.ENCLOSURE_BODY = 5;
 UndigestifyKamensUs.ENCLOSURE_BLANK = 6;
-UndigestifyKamensUs.TRAILER_STARS = 7;
-UndigestifyKamensUs.TRAILER_DONE = 8;
-UndigestifyKamensUs.ERROR = 9;
+// Violates RFC 1153, but what the heck, If Mailman does it, I've got
+// no choice but to support it. *sigh*
+UndigestifyKamensUs.TRAILER_SIGNATURE = 7;
+UndigestifyKamensUs.TRAILER_STARS = 8;
+UndigestifyKamensUs.TRAILER_DONE = 9;
+UndigestifyKamensUs.ERROR = 10;
 
 UndigestifyKamensUs.boolAttribute = function(node, attribute, value) {
     if (value) {
@@ -294,6 +297,7 @@ UndigestifyKamensUs.UriStreamListener.prototype = {
 	    }
 	case UndigestifyKamensUs.ENCLOSURE_BODY:
 	case UndigestifyKamensUs.ENCLOSURE_BLANK:
+	case UndigestifyKamensUs.TRAILER_SIGNATURE:
 	case UndigestifyKamensUs.TRAILER_STARS:
 	case UndigestifyKamensUs.TRAILER_DONE:
 	    if (this._buffer != "") {
@@ -303,7 +307,7 @@ UndigestifyKamensUs.UriStreamListener.prototype = {
 	    for (i in this._toCopy) {
 		var file = this._toCopy[i];
 		var listener = new UndigestifyKamensUs
-		    .CopyServiceListener(file.path);
+		    .CopyServiceListener(file);
 		var copyService = Components
 		    .classes["@mozilla.org/messenger/messagecopyservice;1"]
 		    .getService(Components.interfaces.nsIMsgCopyService);
@@ -424,7 +428,20 @@ UndigestifyKamensUs.UriStreamListener.prototype = {
 		}
 		else if (! line.match(/^[^\s:]+:/) &&
 			 ! (line.buffer != "" && line.match(/^[ \t]/))) {
-		    this._error(aInputStream, "Malformed enclosure header");
+		    this._buffer += "\n";
+		    this._merge_headers();
+		    this._buffer += line;
+		    this._state = UndigestifyKamensUs.TRAILER_SIGNATURE;
+		}
+		else {
+		    this._buffer += line;
+		}
+		break;
+	    case UndigestifyKamensUs.TRAILER_SIGNATURE:
+		if (line.match(/^End of /)) {
+		    this._save_message();
+		    this._buffer = "";
+		    this._state = UndigestifyKamensUs.TRAILER_STARS;
 		}
 		else {
 		    this._buffer += line;
