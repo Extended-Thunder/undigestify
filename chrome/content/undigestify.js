@@ -22,6 +22,7 @@ UndigestifyKamensUs.TRAILER_SIGNATURE = 7;
 UndigestifyKamensUs.TRAILER_STARS = 8;
 UndigestifyKamensUs.TRAILER_DONE = 9;
 UndigestifyKamensUs.ERROR = 10;
+UndigestifyKamensUs.BASE64_BODY = 11; // reading base64 message body
 
 UndigestifyKamensUs.boolAttribute = function(node, attribute, value) {
     if (value) {
@@ -128,6 +129,7 @@ UndigestifyKamensUs.CopyServiceListener.prototype = {
 UndigestifyKamensUs.UriStreamListener = function(messageHDR) {
     this._header = messageHDR;
     this._buffer = "";         // buffer of lines read in current section
+    this._base64 = false;
     this._fragment = "";       // unprocessed text
     this._format = UndigestifyKamensUs.FORMAT_UNKNOWN;
     this._state = UndigestifyKamensUs.PREAMBLE_HEADER;
@@ -168,10 +170,7 @@ UndigestifyKamensUs.UriStreamListener.prototype = {
 	this._toCopy.push(sfile);
     },
 
-    _error: function(stream, message) {
-	if (stream != undefined) {
-	    stream.close();
-	}
+    _error: function(message) {
 	this._state = UndigestifyKamensUs.ERROR;
 	alert("Undigestify: " + message);
     },
@@ -276,22 +275,33 @@ UndigestifyKamensUs.UriStreamListener.prototype = {
     onStartRequest: function(aReq, aContext) {},
 
     onStopRequest: function(aReq, aContext, aStatusCode) {
+	if (this._base64 && this._base64_buffer) {
+	    // https://developer.mozilla.org/en-US/docs/Web/API/window.btoa
+	    var data = this._base64_buffer.replace(/\s+/g, '');
+	    data = window.atob(data)
+	    data = escape(data)
+	    data = decodeURIComponent(data)
+	    this._state = UndigestifyKamensUs.PREAMBLE_BODY;
+	    this._base64 = false;
+	    this._base64_buffer = undefined;
+	    this._process_data(data);
+	}
 	switch (this._state) {
 	case UndigestifyKamensUs.ERROR:
 	    break;
 	case UndigestifyKamensUs.PREAMBLE_HEADER:
-	    this._error(undefined, "Message has no body");
+	    this._error("Message has no body");
 	    break;
 	case UndigestifyKamensUs.PREAMBLE_BODY:
-	    this._error(undefined, "No preamble separator");
+	    this._error("No preamble separator");
 	    break;
 	case UndigestifyKamensUs.PREAMBLE_BLANK:
-	    this._error(undefined, "No enclosures");
+	    this._error("No enclosures");
 	    break;
 	case UndigestifyKamensUs.ENCLOSURE_HEADER:
 	    if (this._buffer == "") {
 		if (this._toCopy.length == 1) {
-		    this._error(undefined, "No enclosures");
+		    this._error("No enclosures");
 		}
 		break;
 	    }
@@ -342,19 +352,7 @@ UndigestifyKamensUs.UriStreamListener.prototype = {
 	}
     },
 
-    onDataAvailable: function(aReq, aContext, aInputStream, aOffset, aCount) {
-	var stream = Components
-	    .classes["@mozilla.org/scriptableinputstream;1"]
-	    .createInstance()
-	    .QueryInterface(Components.interfaces
-			    .nsIScriptableInputStream);
-	stream.init(aInputStream);
-	var data = stream.read(aCount);
-	if (this._fragment.length) {
-	    data = this._fragment + data;
-	    this._fragment = "";
-	}
-	data = data.replace(/\r\n/g, "\n");
+    _process_data: function(data) {
 	while (true) {
 	    var eol = data.search(/\n/);
 	    if (eol < 0) {
@@ -366,6 +364,8 @@ UndigestifyKamensUs.UriStreamListener.prototype = {
 	    case UndigestifyKamensUs.PREAMBLE_HEADER:
 		this._buffer += line;
 		if (line == "\n") {
+		    var encoding = this._get_header(
+			this._buffer, "content-transfer-encoding");
 		    var id = this._get_header(this._buffer, 
 					      "resent-message-id");
 		    if (id) {
@@ -389,8 +389,19 @@ UndigestifyKamensUs.UriStreamListener.prototype = {
 			this._buffer;
 		    this._subject = this._get_header(this._buffer,
 						     "subject");
+		    if (encoding == "base64") {
+			this._base64 = true;
+			this._base64_buffer = data;
+			this._buffer =
+			    "Content-Transfer-Encoding: 8bit\n" +
+			    this._strip_header(this._buffer,
+					       "content-transfer-encoding");
+			this._state = UndigestifyKamensUs.BASE64_BODY;
+		    }
+		    else {
+			this._state = UndigestifyKamensUs.PREAMBLE_BODY;
+		    }
 		    this._headers = this._buffer;
-		    this._state = UndigestifyKamensUs.PREAMBLE_BODY;
 		}
 		break;
 	    case UndigestifyKamensUs.PREAMBLE_BODY:
@@ -417,7 +428,7 @@ UndigestifyKamensUs.UriStreamListener.prototype = {
 	    case UndigestifyKamensUs.ENCLOSURE_HEADER:
 		if (line.match(/^\s*$/)) {
 		    if (this._buffer == "") {
-			this._error(aInputStream, "Missing enclosure header");
+			this._error("Missing enclosure header");
 		    }
 		    this._buffer += line;
 		    this._merge_headers();
@@ -490,7 +501,7 @@ UndigestifyKamensUs.UriStreamListener.prototype = {
 		break;
 	    case UndigestifyKamensUs.TRAILER_STARS:
 		if (! line.match(/^\*+\s*$/)) {
-		    this._error(aInputStream, "Malformed trailer");
+		    this._error("Malformed trailer");
 		}
 		else {
 		    this._state = UndigestifyKamensUs.TRAILER_DONE;
@@ -498,14 +509,37 @@ UndigestifyKamensUs.UriStreamListener.prototype = {
 		break;
 	    case UndigestifyKamensUs.TRAILER_DONE:
 		if (! line.match(/^\s*$/)) {
-		    this._error(aInputStream,
-				"Unexpected content after trailer");
+		    this._error("Unexpected content after trailer");
 		}
 		break;
 	    }
 	}
 	if (data) {
 	    this._fragment = data;
+	}
+    },
+
+    onDataAvailable: function(aReq, aContext, aInputStream, aOffset, aCount) {
+	var stream = Components
+	    .classes["@mozilla.org/scriptableinputstream;1"]
+	    .createInstance()
+	    .QueryInterface(Components.interfaces
+			    .nsIScriptableInputStream);
+	stream.init(aInputStream);
+	var data = stream.read(aCount);
+	if (this._fragment.length) {
+	    data = this._fragment + data;
+	    this._fragment = "";
+	}
+	data = data.replace(/\r\n/g, "\n");
+	if (this._state == UndigestifyKamensUs.BASE64_BODY) {
+	    this._base64_buffer += data;
+	    return;
+	}
+	this._process_data(data);
+	if (this._state == UndigestifyKamensUs.ERROR) {
+	    stream.close();
+	    return;
 	}
     }
 };
