@@ -1,17 +1,24 @@
+// Components.utils.import("resource:///modules/gloda/log4moz.js");
+// ulogger = Log4Moz.getConfiguredLogger("extensions.undigestify",
+//                                       Log4Moz.Level.Trace,
+// 			              Log4Moz.Level.Info,
+// 			              Log4Moz.Level.Debug);
+
 var UndigestifyKamensUs = function() {}
 
 // Constants and states
 UndigestifyKamensUs.FORMAT_UNKNOWN = 0;
 UndigestifyKamensUs.FORMAT_RFC1153 = 1;
 UndigestifyKamensUs.FORMAT_LISTSTAR = 2;
-UndigestifyKamensUs.FORMAT_YAHOO = 3;
+UndigestifyKamensUs.FORMAT_YAHOO = 4;
+UndigestifyKamensUs.FORMAT_YAHOO_STUPID = 8;
 
 UndigestifyKamensUs.PREAMBLE_SEPARATOR =
     "----------------------------------------------------------------------";
 UndigestifyKamensUs.PREAMBLE_SEPARATOR_YAHOO =
     "________________________________________________________________________";
 UndigestifyKamensUs.ENCLOSURE_SEPARATOR_RFC1153 = "------------------------------";
-UndigestifyKamensUs.ENCLOSURE_SEPARATOR_LISTSTAR = 
+UndigestifyKamensUs.ENCLOSURE_SEPARATOR_LISTSTAR =
     UndigestifyKamensUs.PREAMBLE_SEPARATOR;
 UndigestifyKamensUs.ENCLOSURE_SEPARATOR_YAHOO =
     UndigestifyKamensUs.PREAMBLE_SEPARATOR_YAHOO;
@@ -161,7 +168,7 @@ UndigestifyKamensUs.UriStreamListener.prototype = {
 	var sfile = Components.classes["@mozilla.org/file/local;1"]
 	    .createInstance(Components.interfaces.nsILocalFile);
 	sfile.initWithPath(tempDir.path);
-	var uuidGenerator = 
+	var uuidGenerator =
 	    Components.classes["@mozilla.org/uuid-generator;1"]
 	    .getService(Components.interfaces.nsIUUIDGenerator);
 	var uuid = uuidGenerator.generateUUID().toString();
@@ -185,7 +192,7 @@ UndigestifyKamensUs.UriStreamListener.prototype = {
 
     // id argument only used the first time the function is called
     _make_id: function(id) {
-	var uuidGenerator = 
+	var uuidGenerator =
 	    Components.classes["@mozilla.org/uuid-generator;1"]
 	    .getService(Components.interfaces.nsIUUIDGenerator);
 	var uuid = uuidGenerator.generateUUID().toString();
@@ -374,7 +381,7 @@ UndigestifyKamensUs.UriStreamListener.prototype = {
 		if (line == "\n") {
 		    var encoding = this._get_header(
 			this._buffer, "content-transfer-encoding");
-		    var id = this._get_header(this._buffer, 
+		    var id = this._get_header(this._buffer,
 					      "resent-message-id");
 		    if (id) {
 			this._buffer =
@@ -441,6 +448,29 @@ UndigestifyKamensUs.UriStreamListener.prototype = {
 		}
 		break;
 	    case UndigestifyKamensUs.ENCLOSURE_HEADER:
+                if (this._buffer == "" &&
+                     this._format & UndigestifyKamensUs.FORMAT_YAHOO &&
+                    ! (this._format &
+                       UndigestifyKamensUs.FORMAT_YAHOO_STUPID) &&
+                    line.match(/^[0-9a-z.]+\. Re: /)) {
+                    this._format |=
+                        UndigestifyKamensUs.FORMAT_YAHOO_STUPID;
+                }
+
+                if (this._format & UndigestifyKamensUs.FORMAT_YAHOO_STUPID) {
+                    // ulogger.info("Pre-fix header line: " + line)
+                    line = line.replace(/^([0-9a-z.]+\. )Re: /, "Subject: \$1")
+                        .replace(/^\s+Posted by: (.*) (\S+@\S+) .*/,
+                                 "From: \$1 <\$2>")
+                        .replace(/^\s+Posted by: /, "From: ")
+                        .replace(/^\s+(Date: )/, "\$1")
+                    // ulogger.info("Post-fix header line: " + line)
+                }
+                if (this._format & UndigestifyKamensUs.FORMAT_YAHOO) {
+                    line = line.replace(/^(Date: .* )\(\((.*)\)\)/, "\$1\$2")
+                    // ulogger.info("Post-date-fix header line: " + line)
+                }
+
 		if (line.match(/^\s*$/)) {
 		    if (this._buffer == "") {
 			this._error("Missing enclosure header");
@@ -452,26 +482,35 @@ UndigestifyKamensUs.UriStreamListener.prototype = {
 		else if (line.match(/^End of /) && this._buffer == "") {
 		    this._state = UndigestifyKamensUs.TRAILER_STARS;
 		}
+                else if (this._buffer == "" &&
+                         this._format & UndigestifyKamensUs.FORMAT_YAHOO &&
+                         (line.replace(/\s*$/, "") ==
+			  UndigestifyKamensUs.ENCLOSURE_SEPARATOR_YAHOO)) {
+                    // !@#$% Yahoo digests sometimes have two separators in a
+                    // row. Do nothing.
+                }
 		else if (! line.match(/^[^\s:]+:/) &&
 			 ! (line.buffer != "" && line.match(/^[ \t]/))) {
 		    this._buffer += "\n";
 		    this._merge_headers();
 		    this._buffer += line;
 		    this._state = UndigestifyKamensUs.TRAILER_SIGNATURE;
+                    // ulogger.info("ENCLOSURE_HEADER -> TRAILER_SIGNATURE on " + line);
 		}
 		else {
 		    this._buffer += line;
 		}
 		break;
 	    case UndigestifyKamensUs.TRAILER_SIGNATURE:
-                if (this._format == UndigestifyKamensUs.FORMAT_YAHOO &&
+                if (this._format & UndigestifyKamensUs.FORMAT_YAHOO &&
                     (line.replace(/\s*$/, "") ==
 		     UndigestifyKamensUs.TRAILER_SEPARATOR_YAHOO)) {
                     this._save_message();
                     this._buffer = "";
                     this._state = UndigestifyKamensUs.TRAILER_DONE;
+                    // ulogger.info("TRAILER_SIGNATURE -> TRAILER_DONE on " + line);
                 }
-		else if (this._format != UndigestifyKamensUs.FORMAT_YAHOO &&
+		else if (! (this._format & UndigestifyKamensUs.FORMAT_YAHOO) &&
                          line.match(/^End of /)) {
 		    this._save_message();
 		    this._buffer = "";
@@ -496,20 +535,22 @@ UndigestifyKamensUs.UriStreamListener.prototype = {
 		    this._format = UndigestifyKamensUs.FORMAT_LISTSTAR;
 		    this._state = UndigestifyKamensUs.ENCLOSURE_BLANK;
 		}
-		else if (this._format == UndigestifyKamensUs.FORMAT_YAHOO &&
+		else if (this._format & UndigestifyKamensUs.FORMAT_YAHOO &&
 			 (line.replace(/\s*$/, "") ==
 			  UndigestifyKamensUs.ENCLOSURE_SEPARATOR_YAHOO)) {
                     this._save_message();
                     this._buffer = "";
 		    this._state = UndigestifyKamensUs.ENCLOSURE_HEADER;
+                    // ulogger.info("ENCLOSURE_BODY -> ENCLOSURE_HEADER on " + line);
 		}
-		else if (this._format == UndigestifyKamensUs.FORMAT_YAHOO &&
+		else if (this._format & UndigestifyKamensUs.FORMAT_YAHOO &&
 			 (line.replace(/\s*$/, "") ==
 			  UndigestifyKamensUs.TRAILER_SEPARATOR_YAHOO)) {
                     this._save_message();
                     this._buffer = "\n";
                     this._merge_headers();
 		    this._state = UndigestifyKamensUs.TRAILER_SIGNATURE;
+                    // ulogger.info("ENCLOSURE_BODY -> TRAILER_SIGNATURE on " + line);
 		}
 		else {
 		    this._buffer += line;

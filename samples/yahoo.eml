@@ -1,0 +1,400 @@
+Received: from pascal.junkemailfilter.com (pascal.junkemailfilter.com [184.105.182.180])
+	by dudley.casano.com (8.14.9/8.14.8) with ESMTP id t0VAguwi033229
+	(version=TLSv1/SSLv3 cipher=DHE-DSS-AES256-GCM-SHA384 bits=256 verify=NO)
+	for <yahoojunk@casano.com>; Sat, 31 Jan 2015 05:42:57 -0500 (EST)
+	(envelope-from sentto-16100172-6168-1422700959-yahoojunk=casano.com@returns.groups.yahoo.com)
+Delivery-date: Sat, 31 Jan 2015 02:42:56 -0800
+Received: from ng24-vm4.bullet.mail.bf1.yahoo.com ([66.196.80.51]) helo=ng24-vm4.bullet.mail.bf1.yahoo.com
+	by pascal.junkemailfilter.com with esmtps (TLSv1:RC4-SHA:128)
+	(Exim 4.84)
+	id 1YHVVm-0006zh-ID on interface=184.105.182.186
+	for yahoojunk@casano.com; Sat, 31 Jan 2015 02:42:50 -0800
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=yahoogroups.com; s=echoe; t=1422700960; bh=grAI1PJrHf27AAcsU9Ms+CiQ0lGAfi4v92QTv++Vz0E=; h=List-Id:List-Unsubscribe:Date:From:To:Subject:Reply-To:From:Subject; b=TCpsBASuusnt3vnhKYGp6FHZQbylS7gzxnN9bZgTt/9D2v8IWnvAzppjnbubxJ1VOSRyIeOLlekTVFir935r1ltZdz4xn6vyvOXKDfNTPJUYvGvLGZsAu/BAV/Cmo5ZouWSiTaSVcu00gT+OoibtGifPlvKscBtoFWN8oCldlFs=
+Received: from [98.139.213.70] by ng24.bullet.mail.bf1.yahoo.com with NNFMP; 31 Jan 2015 10:42:40 -0000
+Received: from [10.193.84.229] by tg106.bullet.mail.bf1.yahoo.com with NNFMP; 31 Jan 2015 10:42:39 -0000
+X-Yahoo-Newman-Id: 16100172-d6168
+MIME-Version: 1.0
+Message-ID: <1422700959.862.15704.m16@yahoogroups.com>
+Mailing-List: list Loopframe_Guzzi@yahoogroups.com; contact Loopframe_Guzzi-owner@yahoogroups.com
+Delivered-To: mailing list Loopframe_Guzzi@yahoogroups.com
+List-Id: <Loopframe_Guzzi.yahoogroups.com>
+Precedence: bulk
+List-Unsubscribe: <mailto:Loopframe_Guzzi-unsubscribe@yahoogroups.com>
+Date: 31 Jan 2015 10:42:39 -0000
+From: Loopframe_Guzzi@yahoogroups.com
+To: Loopframe_Guzzi@yahoogroups.com
+Subject: [Loopframe_Guzzi] Digest Number 6168
+X-Yahoo-Newman-Property: groups-digest-trad-m
+Reply-To: "No Reply"<notify-dg-Loopframe_Guzzi@yahoogroups.com>
+Content-Type: text/plain; charset=UTF-8
+X-Spamfilter-host: pascal.junkemailfilter.com - http://www.junkemailfilter.com
+X-Key-ID: eWFob29qdW5rQGNhc2Fuby5jb20gc2VudHRvLTE2MTAwMTcyLTYxNjgtMTQyMjcwMDk1OS15YWhvb2p1bms9Y2FzYW5vLmNvbUByZXR1cm5zLmdyb3Vwcy55YWhvby5jb20gU2F0LCAzMSBKYW4gMjAxNSAwMjo0Mjo0OCAtMDgwMA==
+X-Mail-from: sentto-16100172-6168-1422700959-yahoojunk=casano.com@returns.groups.yahoo.com
+X-Relay-Countries: us
+X-Spam-Report: SpamAssassin 3.3.2 (2011-06-06) on spamd3.ctyme.com
+ Spam Tests:
+ * -0.0 RCVD_IN_DNSWL_NONE RBL: Sender listed at http://www.dnswl.org/, no
+ *      trust
+ *      [66.196.80.51 listed in list.dnswl.org]
+ * -0.0 T_RP_MATCHES_RCVD Envelope sender domain matches handover relay
+ *      domain
+ * -0.1 DKIM_VALID_AU Message has a valid DKIM or DK signature from author's
+ *       domain
+ * -0.1 DKIM_VALID Message has at least one valid DKIM or DK signature
+ *  0.1 DKIM_SIGNED Message has a DKIM or DK signature, not necessarily
+ *      valid
+ Languages: en
+ Autolearn: disabled
+X-Spam-Class: HAM - SpamAssassin good - Score=0
+X-Sender-Host-Address: 66.196.80.51
+X-Sender-Host-Name: ng24-vm4.bullet.mail.bf1.yahoo.com
+Content-Transfer-Encoding: 8bit
+X-MIME-Autoconverted: from quoted-printable to 8bit by dudley.casano.com id t0VAguwi033229
+X-DSPAM-Result: Whitelisted
+X-DSPAM-Processed: Sat Jan 31 05:44:19 2015
+X-DSPAM-Confidence: 0.9995
+X-DSPAM-Probability: 0.0000
+X-DSPAM-Signature: 54ccb203334807093297644
+X-DSPAM-Factors: 27,
+	digest, 0.00018,
+	Subject*Digest, 0.00019,
+	messages+in, 0.00030,
+	X-Yahoo-Newman-Property*groups, 0.00031,
+	*From+sentto, 0.00032,
+	Delivered-To*mailing+list, 0.00032,
+	*sentto, 0.00032,
+	Delivered-To*mailing, 0.00032,
+	Delivered-To*list, 0.00032,
+	the+>, 0.00032,
+	com>+wrote, 0.00032,
+	com>+wrote, 0.00032,
+	unsubscribe+yahoogroups, 0.00033,
+	settings+via, 0.00033,
+	settings+online, 0.00033,
+	your+group, 0.00034,
+	online+go, 0.00034,
+	email+settings, 0.00034,
+	Posted+by, 0.00034,
+	Posted+by, 0.00034,
+	fullfeatured, 0.00034,
+	change+settings, 0.00034,
+	change+settings, 0.00034,
+	web+go, 0.00034,
+	group+send, 0.00034,
+	Groups+Links, 0.00034,
+	fullfeatured+yahoogroups, 0.00034
+Status: RO
+X-Status: 
+X-Keywords:                 
+X-UID: 130
+
+There are 15 messages in this issue.
+
+Topics in this digest:
+
+Subject: 1a. (No Loop Content) Anyone fluent in Italian?    
+From: Charles Mullendore
+Subject: 1b. Re: (No Loop Content) Anyone fluent in Italian?    
+From: antonio
+
+Subject: 2a. Re: Borran Rim Polishing Recommendation    
+From:  bigbikerrick
+
+Subject: 3a. Assembly question    
+From:  WALLY5251
+Subject: 3b. Re: Assembly question    
+From: hahnda2
+Subject: 3c. Re: Assembly question    
+From: Hawkes
+Subject: 3d. Re: Assembly question    
+From: Bruce Giller
+Subject: 3e. Re: Assembly question    
+From: Migs Balaguero
+Subject: 3f. Re: Assembly question    
+From: Mac Dennis
+Subject: 3g. Re: Assembly question    
+From: Hawkes
+Subject: 3h. Re: Assembly question    
+From: Charles Mullendore
+
+Subject: 4a. 1968 Moto Guzzi v700 Ambassador Classic - SF, CA    
+From:  shukwan224
+Subject: 4b. Re: 1968 Moto Guzzi v700 Ambassador Classic - SF, CA    
+From: Rob Anderson
+Subject: 4c. Re: 1968 Moto Guzzi v700 Ambassador Classic - SF, CA    
+From:  shukwan224
+
+Subject: 5. Been sitting for a long time.....    
+From:  finchamc
+
+________________________________________________________________________
+Subject: 1a. (No Loop Content) Anyone fluent in Italian?
+From: "Charles Mullendore" amboman4@yahoo.com amboman4
+Date: Fri Jan 30, 2015 6:35 am ((PST))
+
+I'm attempting to purchase a decal set for my Cagiva Elefant from a company in Italy and am having difficulties communicating. If anyone on this group would be willing to help, please contact me at this email address. <amboman4@yahoo.com>Â Â Charlie
+http://www.AntietamClassicCycle.com/
+
+________________________________________________________________________
+Subject: 1b. Re: (No Loop Content) Anyone fluent in Italian?
+From: "antonio" pagthers@wcnet.org pagthers
+Date: Fri Jan 30, 2015 6:44 am ((PST))
+
+Charlie, I am fluent in Italian so let me know how I can Help
+Antonio
+
+________________________________________________________________________
+Subject: 2a. Re: Borran Rim Polishing Recommendation
+From:  bigbikerrick@hotmail.com bigbikerrick
+Date: Fri Jan 30, 2015 3:07 pm ((PST))
+
+I use bar keepers friend with a paintbrush to scrub the cases on my Guzzis . I make a paste with water in a cup and work it into nooks and crannies with the bristles, it leaves the alloy nice and bright, except for some types of alloy like my convert transmission case, which actually turn darker with the oxalic acid scrub. I was able to brighten it afterwards with a red 3m abrasive pad, and a bit of simple green diluted 50%. 
+Rick.
+
+________________________________________________________________________
+Subject: 3a. Assembly question
+From:  wally5251@yahoo.com WALLY5251
+Date: Fri Jan 30, 2015 3:19 pm ((PST))
+
+Just how important are O-rings on the jug studs ?
+
+Robert
+
+ 
+
+
+________________________________________________________________________
+Subject: 3b. Re: Assembly question
+From: "hahnda2" hahnda2@gmail.com hahnda2
+Date: Fri Jan 30, 2015 3:44 pm ((PST))
+
+Pretty important I'm guessing. I am sure you will have a leak if you don't
+use them. Did you assemble without them or are you wanting to assemble but
+don't have the o-rings?
+
+On Fri, Jan 30, 2015 at 5:19 PM, wally5251@yahoo.com [Loopframe_Guzzi] <
+Loopframe_Guzzi@yahoogroups.com> wrote:
+
+>
+> Just how important are O-rings on the jug studs ?
+>
+> Robert
+>
+>  
+>
+
+-- 
+A bend in the road is not the end of the road -- unless you fail to make
+the turn
+
+________________________________________________________________________
+Subject: 3c. Re: Assembly question
+From: "Hawkes" 3hawkes@bluefrog.com chumpasol
+Date: Fri Jan 30, 2015 3:44 pm ((PST))
+
+Very important to use the correct kind and not just some hardware store, plumbing type o-rings.  They have to be oil/fuel resistant.  Forgot the name but some of the guys with better brain cells will remember.  Bob Hawkes
+
+ 
+
+From: Loopframe_Guzzi@yahoogroups.com [mailto:Loopframe_Guzzi@yahoogroups.com] 
+Sent: Friday, January 30, 2015 6:20 PM
+To: Loopframe_Guzzi@yahoogroups.com
+Subject: [Loopframe_Guzzi] Assembly question
+
+ 
+
+Just how important are O-rings on the jug studs ?
+
+Robert
+
+ 
+
+________________________________________________________________________
+Subject: 3d. Re: Assembly question
+From: "Bruce Giller" bcgiller@gmail.com alfa_gtv2k
+Date: Fri Jan 30, 2015 5:19 pm ((PST))
+
+Viton is name you are looking for.  McMaster-Car sells them in an
+assortment of metric flavors.
+
+Bruce
+
+On Fri, Jan 30, 2015 at 6:44 PM, 'Hawkes' 3hawkes@bluefrog.com
+[Loopframe_Guzzi] <Loopframe_Guzzi@yahoogroups.com> wrote:
+
+>
+> *Very important to use the correct kind and not just some hardware store,
+> plumbing type o-rings.  They have to be oil/fuel resistant.  Forgot the
+> name but some of the guys with better brain cells will remember.  Bob
+> Hawkes*
+>
+> *From:* Loopframe_Guzzi@yahoogroups.com [mailto:
+> Loopframe_Guzzi@yahoogroups.com]
+> *Sent:* Friday, January 30, 2015 6:20 PM
+> *To:* Loopframe_Guzzi@yahoogroups.com
+> *Subject:* [Loopframe_Guzzi] Assembly question
+>
+> Just how important are O-rings on the jug studs ?
+>
+> Robert
+>
+> 
+>
+
+________________________________________________________________________
+Subject: 3e. Re: Assembly question
+From: "Migs Balaguero" balaguerom@yahoo.com balaguerom
+Date: Fri Jan 30, 2015 5:20 pm ((PST))
+
+Hi Robert,I replaced all the o rings except for the two larger ones....the one that is on the stud nut that goes through the head. Â I couldn't get it at the time so I used the old ones...no good. Â My boots and lower pants got all oily on the first ride. Have found the proper replacement o rings and haven't installed them yet. Â In short, I think they are important and hope to keep the oil leaking to a minimum.
+Good luck,
+MIguelÂ 
+
+________________________________________________________________________
+Subject: 3f. Re: Assembly question
+From: "Mac Dennis" capriolo@fastmail.fm mackvny
+Date: Fri Jan 30, 2015 5:28 pm ((PST))
+
+One of the few things that piss me off about moto Guzzi is you can not reuse any of the gaskets when pulling the heads. Be it o-rings, exhaust rings or gaskets.
+If you do you will most likely have a leak.
+
+Mac
+
+On Jan 30, 2015, at 8:17 PM, "Migs Balaguero balaguerom@yahoo.com [Loopframe_Guzzi]" <Loopframe_Guzzi@yahoogroups.com> wrote:
+
+Hi Robert,
+I replaced all the o rings except for the two larger ones....the one that is on the stud nut that goes through the head.  I couldn't get it at the time so I used the old ones...no good.  My boots and lower pants got all oily on the first ride. Have found the proper replacement o rings and haven't installed them yet.  In short, I think they are important and hope to keep the oil leaking to a minimum.
+
+Good luck,
+
+MIguel 
+
+________________________________________________________________________
+Subject: 3g. Re: Assembly question
+From: "Hawkes" 3hawkes@bluefrog.com chumpasol
+Date: Fri Jan 30, 2015 5:57 pm ((PST))
+
+Get the Viton ones Miguel, like someone said on the Loop Group â€" Good luck
+
+ 
+
+From: Loopframe_Guzzi@yahoogroups.com [mailto:Loopframe_Guzzi@yahoogroups.com] 
+Sent: Friday, January 30, 2015 8:18 PM
+To: Loopframe_Guzzi@yahoogroups.com
+Subject: [Loopframe_Guzzi] Re: Assembly question
+
+ 
+
+Hi Robert,
+
+I replaced all the o rings except for the two larger ones....the one that is on the stud nut that goes through the head.  I couldn't get it at the time so I used the old ones...no good.  My boots and lower pants got all oily on the first ride. Have found the proper replacement o rings and haven't installed them yet.  In short, I think they are important and hope to keep the oil leaking to a minimum.
+
+ 
+
+Good luck,
+
+ 
+
+MIguel 
+
+________________________________________________________________________
+Subject: 3h. Re: Assembly question
+From: "Charles Mullendore" amboman4@yahoo.com amboman4
+Date: Fri Jan 30, 2015 6:51 pm ((PST))
+
+Just curious - what other bikes of the same period can you reuse the gaskets? No big deal to me...Â Â Â Charlie
+http://www.AntietamClassicCycle.com/
+From: "Mac Dennis capriolo@fastmail.fm [Loopframe_Guzzi]"Â <!--#yiv3709330957 #yiv3709330957 .yiv3709330957ygrp-photo-title{clear:both;font-size:smaller;height:15px;overflow:hidden;text-align:center;width:75px;}#yiv3709330957 div.yiv3709330957ygrp-photo{background-position:center;background-repeat:no-repeat;background-color:white;border:1px solid black;height:62px;width:62px;}#yiv3709330957 div.yiv3709330957photo-title a, #yiv3709330957 div.yiv3709330957photo-title a:active, #yiv3709330957 div.yiv3709330957photo-title a:hover, #yiv3709330957 div.yiv3709330957photo-title a:visited {text-decoration:none;}#yiv3709330957 div.yiv3709330957attach-table div.yiv3709330957attach-row {clear:both;}#yiv3709330957 div.yiv3709330957attach-table div.yiv3709330957attach-row div {float:left;}#yiv3709330957 p {clear:both;padding:15px 0 3px 0;overflow:hidden;}#yiv3709330957 div.yiv3709330957ygrp-file {width:30px;}#yiv3709330957 div.yiv3709330957attach-table div.yiv3709330957attach-row div div a {text-decoration:none;}#yiv3709330957 div.yiv3709330957attach-table div.yiv3709330957attach-row div div span {font-weight:normal;}#yiv3709330957 div.yiv3709330957ygrp-file-title {font-weight:bold;}#yiv3709330957 --> 
+
+One of the few things that piss me off about moto Guzzi is you can not reuse any of the gaskets when pulling the heads. Be it o-rings, exhaust rings or gaskets.If you do you will most likely have a leak.
+
+  
+
+________________________________________________________________________
+Subject: 4a. 1968 Moto Guzzi v700 Ambassador Classic - SF, CA
+From:  shukwan224@yahoo.com shukwan224
+Date: Fri Jan 30, 2015 7:40 pm ((PST))
+
+Hello, I am selling my Moto Guzzi
+I am located in San Francisco California
+415-548-1093
+Please check it out!
+
+Moto Guzzi V700 / Ambassador, 4 speed transmission, 50k miles, run excellent, well maintained by previous owner.
+No leaks. 
+Everything works on the bike, electrical and mechanical.
+Tires are in almost new conditions. 
+It is registered and can be driven away.
+Thanks for looking, please leave phone number in an email if you are interested.
+$4400obo
+
+ 
+
+
+________________________________________________________________________
+Subject: 4b. Re: 1968 Moto Guzzi v700 Ambassador Classic - SF, CA
+From: "Rob Anderson" rob.anderson@iinet.net.au guzzirob57
+Date: Fri Jan 30, 2015 9:06 pm ((PST))
+
+This advert looks dodgy to me ... forgive me for being sceptical if it is a real seller and not a scammer. Rob (overexposed to gumtree)
+
+Sent from my iPad
+
+On 31 Jan 2015, at 2:40 pm, shukwan224@yahoo.com [Loopframe_Guzzi] <Loopframe_Guzzi@yahoogroups.com> wrote:
+
+Hello, I am selling my Moto Guzzi
+I am located in San Francisco California
+415-548-1093
+Please check it out!
+
+Moto Guzzi V700 / Ambassador, 4 speed transmission, 50k miles, run excellent, well maintained by previous owner.
+No leaks. 
+Everything works on the bike, electrical and mechanical.
+Tires are in almost new conditions. 
+It is registered and can be driven away.
+Thanks for looking, please leave phone number in an email if you are interested.
+$4400obo
+
+________________________________________________________________________
+Subject: 4c. Re: 1968 Moto Guzzi v700 Ambassador Classic - SF, CA
+From:  shukwan224@yahoo.com shukwan224
+Date: Fri Jan 30, 2015 9:52 pm ((PST))
+
+Yes I am a real private seller. Please let me know why you thinks this ad is "dodgy"
+ Any commons/help on how to post or not will be appeciated.
+ 
+
+ I am just trying to sell my bike, and here seem to be a good place.
+
+________________________________________________________________________
+Subject: 5. Been sitting for a long time.....
+From:  finchamc@yahoo.com finchamc
+Date: Sat Jan 31, 2015 2:42 am ((PST))
+
+Ok new to  guzzis....I have a california 1974..been sitting for many a year bought like this....believe it have original chrome liners.....not been turned over since bought it...my father in law thinks I need to try to see if it will turn over????will this trash it if it is chrome or will it be OK just to test it if it is run just a bit....any thoughts.Don't know if even will run.
+
+------------------------------------------------------------------------
+Yahoo Groups Links
+
+<*> To visit your group on the web, go to:
+    http://groups.yahoo.com/group/Loopframe_Guzzi/
+
+<*> Your email settings:
+    Digest Email  | Traditional
+
+<*> To change settings online go to:
+    http://groups.yahoo.com/group/Loopframe_Guzzi/join
+    (Yahoo! ID required)
+
+<*> To change settings via email:
+    Loopframe_Guzzi-normal@yahoogroups.com 
+    Loopframe_Guzzi-fullfeatured@yahoogroups.com
+
+<*> To unsubscribe from this group, send an email to:
+    Loopframe_Guzzi-unsubscribe@yahoogroups.com
+
+<*> Your use of Yahoo Groups is subject to:
+    https://info.yahoo.com/legal/us/yahoo/utos/terms/
+ 
+------------------------------------------------------------------------
+
