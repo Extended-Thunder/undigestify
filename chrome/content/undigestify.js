@@ -4,11 +4,19 @@ var UndigestifyKamensUs = function() {}
 UndigestifyKamensUs.FORMAT_UNKNOWN = 0;
 UndigestifyKamensUs.FORMAT_RFC1153 = 1;
 UndigestifyKamensUs.FORMAT_LISTSTAR = 2;
+UndigestifyKamensUs.FORMAT_YAHOO = 3;
 
 UndigestifyKamensUs.PREAMBLE_SEPARATOR =
     "----------------------------------------------------------------------";
+UndigestifyKamensUs.PREAMBLE_SEPARATOR_YAHOO =
+    "________________________________________________________________________";
 UndigestifyKamensUs.ENCLOSURE_SEPARATOR_RFC1153 = "------------------------------";
-UndigestifyKamensUs.ENCLOSURE_SEPARATOR_LISTSTAR = "----------------------------------------------------------------------";
+UndigestifyKamensUs.ENCLOSURE_SEPARATOR_LISTSTAR = 
+    UndigestifyKamensUs.PREAMBLE_SEPARATOR;
+UndigestifyKamensUs.ENCLOSURE_SEPARATOR_YAHOO =
+    UndigestifyKamensUs.PREAMBLE_SEPARATOR_YAHOO;
+UndigestifyKamensUs.TRAILER_SEPARATOR_YAHOO =
+    "------------------------------------------------------------------------";
 
 UndigestifyKamensUs.PREAMBLE_HEADER = 1;
 UndigestifyKamensUs.PREAMBLE_BODY = 2;
@@ -406,6 +414,13 @@ UndigestifyKamensUs.UriStreamListener.prototype = {
 		break;
 	    case UndigestifyKamensUs.PREAMBLE_BODY:
 		if (line.replace(/\s*$/, "") ==
+		    UndigestifyKamensUs.PREAMBLE_SEPARATOR_YAHOO) {
+                    this._format = UndigestifyKamensUs.FORMAT_YAHOO;
+                    this._save_message();
+                    this._buffer = "";
+                    this._state = UndigestifyKamensUs.ENCLOSURE_HEADER;
+		}
+		else if (line.replace(/\s*$/, "") ==
 		    UndigestifyKamensUs.PREAMBLE_SEPARATOR) {
 		    this._state = UndigestifyKamensUs.PREAMBLE_BLANK;
 		}
@@ -449,7 +464,15 @@ UndigestifyKamensUs.UriStreamListener.prototype = {
 		}
 		break;
 	    case UndigestifyKamensUs.TRAILER_SIGNATURE:
-		if (line.match(/^End of /)) {
+                if (this._format == UndigestifyKamensUs.FORMAT_YAHOO &&
+                    (line.replace(/\s*$/, "") ==
+		     UndigestifyKamensUs.TRAILER_SEPARATOR_YAHOO)) {
+                    this._save_message();
+                    this._buffer = "";
+                    this._state = UndigestifyKamensUs.TRAILER_DONE;
+                }
+		else if (this._format != UndigestifyKamensUs.FORMAT_YAHOO &&
+                         line.match(/^End of /)) {
 		    this._save_message();
 		    this._buffer = "";
 		    this._state = UndigestifyKamensUs.TRAILER_STARS;
@@ -472,6 +495,21 @@ UndigestifyKamensUs.UriStreamListener.prototype = {
 			  UndigestifyKamensUs.ENCLOSURE_SEPARATOR_LISTSTAR)) {
 		    this._format = UndigestifyKamensUs.FORMAT_LISTSTAR;
 		    this._state = UndigestifyKamensUs.ENCLOSURE_BLANK;
+		}
+		else if (this._format == UndigestifyKamensUs.FORMAT_YAHOO &&
+			 (line.replace(/\s*$/, "") ==
+			  UndigestifyKamensUs.ENCLOSURE_SEPARATOR_YAHOO)) {
+                    this._save_message();
+                    this._buffer = "";
+		    this._state = UndigestifyKamensUs.ENCLOSURE_HEADER;
+		}
+		else if (this._format == UndigestifyKamensUs.FORMAT_YAHOO &&
+			 (line.replace(/\s*$/, "") ==
+			  UndigestifyKamensUs.TRAILER_SEPARATOR_YAHOO)) {
+                    this._save_message();
+                    this._buffer = "\n";
+                    this._merge_headers();
+		    this._state = UndigestifyKamensUs.TRAILER_SIGNATURE;
 		}
 		else {
 		    this._buffer += line;
