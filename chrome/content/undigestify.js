@@ -11,7 +11,6 @@ UndigestifyKamensUs.FORMAT_UNKNOWN = 0;
 UndigestifyKamensUs.FORMAT_RFC1153 = 1;
 UndigestifyKamensUs.FORMAT_LISTSTAR = 2;
 UndigestifyKamensUs.FORMAT_YAHOO = 4;
-UndigestifyKamensUs.FORMAT_YAHOO_STUPID = 8;
 
 UndigestifyKamensUs.PREAMBLE_SEPARATOR =
     "----------------------------------------------------------------------";
@@ -448,27 +447,15 @@ UndigestifyKamensUs.UriStreamListener.prototype = {
 		}
 		break;
 	    case UndigestifyKamensUs.ENCLOSURE_HEADER:
-                if (this._buffer == "" &&
-                     this._format & UndigestifyKamensUs.FORMAT_YAHOO &&
-                    ! (this._format &
-                       UndigestifyKamensUs.FORMAT_YAHOO_STUPID) &&
-                    line.match(/^[0-9a-z.]+\. Re: /)) {
-                    this._format |=
-                        UndigestifyKamensUs.FORMAT_YAHOO_STUPID;
-                }
-
-                if (this._format & UndigestifyKamensUs.FORMAT_YAHOO_STUPID) {
+                if (this._format & UndigestifyKamensUs.FORMAT_YAHOO) {
                     // ulogger.info("Pre-fix header line: " + line)
-                    line = line.replace(/^([0-9a-z.]+\. )Re: /, "Subject: \$1")
+                    line = line.replace(/^([0-9][0-9a-z.]+\. )/, "Subject: \$1")
                         .replace(/^\s+Posted by: (.*) (\S+@\S+) .*/,
                                  "From: \$1 <\$2>")
                         .replace(/^\s+Posted by: /, "From: ")
                         .replace(/^\s+(Date: )/, "\$1")
+                        .replace(/^(Date: .* )\(\((.*)\)\)/, "\$1\$2")
                     // ulogger.info("Post-fix header line: " + line)
-                }
-                if (this._format & UndigestifyKamensUs.FORMAT_YAHOO) {
-                    line = line.replace(/^(Date: .* )\(\((.*)\)\)/, "\$1\$2")
-                    // ulogger.info("Post-date-fix header line: " + line)
                 }
 
 		if (line.match(/^\s*$/)) {
