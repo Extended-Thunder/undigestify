@@ -449,7 +449,7 @@ UndigestifyKamensUs.UriStreamListener.prototype = {
 	    case UndigestifyKamensUs.ENCLOSURE_HEADER:
                 if (this._format & UndigestifyKamensUs.FORMAT_YAHOO) {
                     // ulogger.info("Pre-fix header line: " + line)
-                    line = line.replace(/^([0-9][0-9a-z.]+\. )/, "Subject: \$1")
+                    line = line.replace(/^([0-9][0-9a-z.]*\. )/, "Subject: \$1")
                         .replace(/^\s+Posted by: (.*) (\S+@\S+) .*/,
                                  "From: \$1 <\$2>")
                         .replace(/^\s+Posted by: /, "From: ")
