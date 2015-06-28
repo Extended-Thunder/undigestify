@@ -5,7 +5,7 @@
     <em:type>2</em:type>
     <em:id>undigestify@kamens.us</em:id>
     <em:name>Undigestify</em:name>
-    <em:version>1.0</em:version>
+    <em:version>1.0.1</em:version>
     <em:creator>Jonathan Kamens</em:creator>
     <em:translator>Mikael Hiort af Ornäs</em:translator><!-- Swedish -->
     <em:translator>markh from BabelZilla</em:translator><!-- Dutch, French -->
@@ -13,6 +13,7 @@
     <em:translator>whknnn from BabelZilla</em:translator><!-- Simplified Chinese -->
     <em:translator>Mauri from BabelZilla</em:translator><!-- German -->
     <em:translator>ouesten from BabelZilla</em:translator><!-- Portuguese (Brazilian) -->
+    <em:translator>Sappa from BabelZilla</em:translator><!-- uk-UA -->
     <em:description>Undigestify RFC 1153, ListStar, and Yahoo digest messages</em:description>
     <em:targetApplication>
       <Description>
