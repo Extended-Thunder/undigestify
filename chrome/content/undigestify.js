@@ -165,7 +165,7 @@ UndigestifyKamensUs.UriStreamListener.prototype = {
 	    .getService(Components.interfaces.nsIProperties);
 	var tempDir = dirService.get("TmpD", Components.interfaces.nsIFile);
 	var sfile = Components.classes["@mozilla.org/file/local;1"]
-	    .createInstance(Components.interfaces.nsILocalFile);
+	    .createInstance(Components.interfaces.nsIFile);
 	sfile.initWithPath(tempDir.path);
 	var uuidGenerator =
 	    Components.classes["@mozilla.org/uuid-generator;1"]
@@ -341,7 +341,7 @@ UndigestifyKamensUs.UriStreamListener.prototype = {
 		    .createInstance();
 		if (UndigestifyKamensUs.IsPostbox()) {
 		    var sfile = Components.classes["@mozilla.org/file/local;1"]
-			.createInstance(Components.interfaces.nsILocalFile);
+			.createInstance(Components.interfaces.nsIFile);
 		    sfile.initWithPath(file.path);
 		    copyService.CopyFileMessage(sfile, folder, 0, "", listener,
 						msgWindow);
@@ -356,7 +356,7 @@ UndigestifyKamensUs.UriStreamListener.prototype = {
 		}
 		else {
 		    var sfile = Components.classes["@mozilla.org/file/local;1"]
-			.createInstance(Components.interfaces.nsILocalFile);
+			.createInstance(Components.interfaces.nsIFile);
 		    sfile.initWithPath(file.path);
 		    copyService.CopyFileMessage(sfile, folder, null, false, 0,
 						"", listener, msgWindow);
